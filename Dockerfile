@@ -1,12 +1,17 @@
-# syntax=docker/dockerfile:1
-FROM golang:1.16-alpine3.13 AS builder
-WORKDIR /app
-COPY . .
-RUN go build -o main main.go
+FROM golang:alpine
 
-FROM alpine:3.13
-WORKDIR /app
-COPY --from=builder /app/main .
+RUN mkdir /app
 
-EXPOSE 8080
-CMD ["/app/main"]
+WORKDIR /app
+
+ADD go.mod .
+ADD go.sum .
+
+RUN go mod download
+ADD . .
+
+RUN go get github.com/githubnemo/CompileDaemon
+
+EXPOSE 8000
+
+ENTRYPOINT CompileDaemon --build="go build main.go" --command=./main

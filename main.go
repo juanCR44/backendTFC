@@ -1,11 +1,13 @@
 package main
 
 import (
+	"bufio"
 	"encoding/csv"
 	"fmt"
+	"net"
 	"net/http"
 	"os"
-	"path/filepath"
+	"strings"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -17,28 +19,33 @@ func main() {
 
 	router.POST("/upload", func(c *gin.Context) {
 		fmt.Println(c.ContentType())
-		file, err := c.FormFile("file")
 
-		//fmt.Println(file, " aver ", err)
+		file, _, err := c.Request.FormFile("file")
+
 		if err != nil {
 			c.String(http.StatusBadRequest, fmt.Sprintf("get form err: %s", err.Error()))
 			return
 		}
-		filename := filepath.Base(file.Filename)
-		fmt.Printf("Uploaded File : %+v\n", filename)
 
-		out, _ := os.Open(file.Filename)
+		csvlines, err := csv.NewReader(file).ReadAll()
 
-		csvLines, readErr := csv.NewReader(out).ReadAll()
-		if readErr != nil {
+		if err != nil {
 			c.String(http.StatusBadRequest, fmt.Sprintf("get form err: %s", err.Error()))
 			return
 		}
 
-		for _, line := range csvLines {
-			fmt.Println(line)
-		}
+		fmt.Print(csvlines)
+
 	})
+
+	bufferIn := bufio.NewReader(os.Stdin)
+	fmt.Print("Ingrese el puerto remoto: ")
+	puerto, _ := bufferIn.ReadString('\n')
+	puerto = strings.TrimSpace(puerto)
+	remotehost := fmt.Sprintf("localhost:%s", puerto)
+	con, _ := net.Dial("tcp", remotehost)
+	defer con.Close()
+	fmt.Fprintln(con, 35)
 
 	router.Run("localhost:8080")
 }
