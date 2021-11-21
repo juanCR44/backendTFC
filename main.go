@@ -1,8 +1,6 @@
 package main
 
 import (
-	"Backend/httpd/handler"
-	"Backend/platform/newsfeed"
 	"encoding/csv"
 	"fmt"
 	"net/http"
@@ -14,13 +12,8 @@ import (
 )
 
 func main() {
-	feed := newsfeed.New()
 	router := gin.Default()
 	router.Use(cors.Default())
-
-	router.GET("/ping", handler.RouteGet())
-	router.GET("/newsfeed", handler.NewsfeedGet(feed))
-	router.POST("/newsfeed", handler.NewsfeedPost(feed))
 
 	router.POST("/upload", func(c *gin.Context) {
 		fmt.Println(c.ContentType())
