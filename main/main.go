@@ -62,23 +62,6 @@ func conexionCluster(importaciones []Importacion) {
 	fmt.Fprintln(con, "")
 }
 
-func cargarSintomas(resp http.ResponseWriter, req *http.Request) {
-	resp.Header().Set("Access-Control-Allow-Origin", "http://localhost:4200")
-	resp.Header().Set("Access-Control-Allow-Credentials", "true")
-	resp.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
-	resp.Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
-
-	var listaSintoma []string
-	body, err := ioutil.ReadAll(req.Body)
-
-	if err != nil {
-		http.Error(resp, "Error", http.StatusBadRequest)
-	}
-
-	json.Unmarshal([]byte(body), &listaSintoma)
-	fmt.Print(listaSintoma)
-}
-
 func cargarImportaciones(resp http.ResponseWriter, req *http.Request) {
 	resp.Header().Set("Access-Control-Allow-Origin", "http://localhost:4200")
 	resp.Header().Set("Access-Control-Allow-Credentials", "true")
