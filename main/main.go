@@ -67,6 +67,7 @@ func conexionCluster(csv [][]string, sintomas []string) {
 	defer con.Close()
 	fmt.Fprintln(con, csv)
 	fmt.Fprintln(con, sintomas)
+	fmt.Fprintln(con, "")
 }
 
 func cargarImportaciones(resp http.ResponseWriter, req *http.Request) {

@@ -179,12 +179,12 @@ func manejadorHP(con net.Conn) {
 	//fmt.Print(line, " 1")
 	//csv = strings.TrimSpace(csv)
 
-	resp_nodo, _ := bufferIn.ReadString('\n')
-	var sintomas []string
-	json.Unmarshal([]byte(resp_nodo), sintomas)
+	sintomas, _ := bufferIn.ReadString('\n')
+	var listaSintomas []string
+	json.Unmarshal([]byte(sintomas), sintomas)
 
 	//fmt.Print(sintomas, " 2")
-
+	resp_nodo, _ := bufferIn.ReadString('\n')
 	resp_nodo = strings.TrimSpace(resp_nodo)
 
 	if resp_nodo != "" {
@@ -193,11 +193,11 @@ func manejadorHP(con net.Conn) {
 	fmt.Println("Respuesta recibida: ", resp_nodo)
 	fmt.Println("Todas las resp: ", bitacoraResp)
 	if resp == "" {
-		resp = algoritmo(line)
-		enviarProximo(line)
+		resp = algoritmo(line, listaSintomas)
+		enviarProximo(line, listaSintomas, resp_nodo)
 	}
 }
-func algoritmo(csv [][]string) string {
+func algoritmo(csv [][]string, sintomas []string) string {
 	//fmt.Println(csv, "Fin csv")
 	//Creación del clasificador bayesiano
 
@@ -220,15 +220,39 @@ func algoritmo(csv [][]string) string {
 
 	fmt.Print("Finalizado entrenamiento")
 
+	//Aquí se pasan la lista de sintomas que ingresa el usuario
+	scores, likely, _ := classifier.LogScores(
+		[]string{"fiebre", "dificultad_respiratoria", "anosmia_hiposmia",
+			"dolor_pecho"},
+	)
+
+	probs, likely, _ := classifier.ProbScores(
+		[]string{"fiebre", "dificultad_respiratoria", "anosmia_hiposmia",
+			"dolor_pecho"},
+	)
+
+	_ = likely
+	_ = scores
+
+	//Print del resultado
+	if probs[0] > probs[1] {
+		fmt.Print("Sospechoso")
+		resp = "Sospechoso"
+	} else {
+		fmt.Print("No sospechoso")
+		resp = "No Sospechoso"
+	}
+	fmt.Print(probs)
+
 	return "respuesta de esta cosa" + localhostReg
 }
 
-func enviarProximo(csv [][]string) {
+func enviarProximo(csv [][]string, sintomas []string, resp string) {
 	indice := rand.Intn(len(bitacoraAddr2))
 	con, _ := net.Dial("tcp", bitacoraAddr2[indice])
 	//fmt.Printf("Enviando hacia %s", bitacoraAddr2[indice], csv)
 	defer con.Close()
 	fmt.Fprintln(con, csv)
+	fmt.Fprintln(con, sintomas)
 	fmt.Fprintln(con, resp)
-
 }
