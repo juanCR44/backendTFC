@@ -174,14 +174,15 @@ func manejadorHP(con net.Conn) {
 	bufferIn := bufio.NewReader(con)
 
 	csv, _ := bufferIn.ReadString('\n')
+	fmt.Print(csv, " 1")
 	var line [][]string
 	json.Unmarshal([]byte(csv), line)
-	//fmt.Print(line, " 1")
+	fmt.Print(line, " 2")
 	//csv = strings.TrimSpace(csv)
 
-	sintomas, _ := bufferIn.ReadString('\n')
+	/*sintomas, _ := bufferIn.ReadString('\n')
 	var listaSintomas []string
-	json.Unmarshal([]byte(sintomas), sintomas)
+	json.Unmarshal([]byte(sintomas), sintomas)*/
 
 	//fmt.Print(sintomas, " 2")
 	resp_nodo, _ := bufferIn.ReadString('\n')
@@ -193,11 +194,11 @@ func manejadorHP(con net.Conn) {
 	fmt.Println("Respuesta recibida: ", resp_nodo)
 	fmt.Println("Todas las resp: ", bitacoraResp)
 	if resp == "" {
-		resp = algoritmo(line, listaSintomas)
-		enviarProximo(line, listaSintomas, resp_nodo)
+		resp = algoritmo(line)
+		enviarProximo(line)
 	}
 }
-func algoritmo(csv [][]string, sintomas []string) string {
+func algoritmo(csv [][]string) string {
 	//fmt.Println(csv, "Fin csv")
 	//Creación del clasificador bayesiano
 
@@ -206,6 +207,8 @@ func algoritmo(csv [][]string, sintomas []string) string {
 	}*/
 
 	classifier := bayesian.NewClassifier(sospechoso, no_sospechoso)
+
+	fmt.Println(csv, " aver si hay CSV")
 
 	//Entrenamiento con la data del csv
 	for i := 0; i < len(csv); i++ {
@@ -221,6 +224,7 @@ func algoritmo(csv [][]string, sintomas []string) string {
 	fmt.Print("Finalizado entrenamiento")
 
 	//Aquí se pasan la lista de sintomas que ingresa el usuario
+	/*fmt.Println(sintomas, " a ver si hay ")
 	scores, likely, _ := classifier.LogScores(
 		sintomas,
 	)
@@ -240,17 +244,16 @@ func algoritmo(csv [][]string, sintomas []string) string {
 		fmt.Print("No sospechoso")
 		resp = "No Sospechoso"
 	}
-	fmt.Print(probs)
+	fmt.Print(probs)*/
 
 	return "respuesta de esta cosa" + localhostReg
 }
 
-func enviarProximo(csv [][]string, sintomas []string, resp string) {
+func enviarProximo(csv [][]string) {
 	indice := rand.Intn(len(bitacoraAddr2))
 	con, _ := net.Dial("tcp", bitacoraAddr2[indice])
-	//fmt.Printf("Enviando hacia %s", bitacoraAddr2[indice], csv)
+	fmt.Printf("Enviando hacia %s", bitacoraAddr2[indice], csv)
 	defer con.Close()
 	fmt.Fprintln(con, csv)
-	fmt.Fprintln(con, sintomas)
 	fmt.Fprintln(con, resp)
 }
