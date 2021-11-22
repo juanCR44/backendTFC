@@ -8,6 +8,8 @@ import (
 	"net"
 	"os"
 	"strings"
+
+	"github.com/navossoc/bayesian"
 )
 
 var localhostReg string
@@ -18,6 +20,11 @@ var bitacoraAddr []string
 var bitacoraAddr2 []string
 var resp string = ""
 var bitacoraResp []string
+
+const (
+	sospechoso    bayesian.Class = "sospechoso"
+	no_sospechoso bayesian.Class = "no_sospechoso"
+)
 
 func main() {
 	bufferIn := bufio.NewReader(os.Stdin)
@@ -165,8 +172,8 @@ func servicioHP() {
 func manejadorHP(con net.Conn) {
 	defer con.Close()
 	bufferIn := bufio.NewReader(con)
-	importaciones, _ := bufferIn.ReadString('\n')
-	importaciones = strings.TrimSpace(importaciones)
+	csv, _ := bufferIn.ReadString('\n')
+	csv = strings.TrimSpace(csv)
 	resp_nodo, _ := bufferIn.ReadString('\n')
 	resp_nodo = strings.TrimSpace(resp_nodo)
 
@@ -176,21 +183,37 @@ func manejadorHP(con net.Conn) {
 	fmt.Println("Respuesta recibida: ", resp_nodo)
 	fmt.Println("Todas las resp: ", bitacoraResp)
 	if resp == "" {
-		resp = algoritmo(importaciones)
-		enviarProximo(importaciones)
+		resp = algoritmo(csv)
+		enviarProximo(csv)
 	}
 }
-func algoritmo(importaciones string) string {
-	//fmt.Println(importaciones, "Fin importaciones")
+func algoritmo(csv string) string {
+	//fmt.Println(csv, "Fin csv")
+	//Creación del clasificador bayesiano
+	/*classifier := bayesian.NewClassifier(sospechoso, no_sospechoso)
+
+	//Entrenamiento con la data del csv
+	for i := 0; i < len(csv); i++ {
+		if csv[i][0] == "Flag_sospechoso" {
+			sospechosoSintomas := csv[i][1:]
+			classifier.Learn(sospechosoSintomas, sospechoso)
+		} else {
+			no_sospechosoSintomas := csv[i]
+			classifier.Learn(no_sospechosoSintomas, no_sospechoso)
+		}
+	}*/
+
+	fmt.Print("Finalizado entrenamiento")
+
 	return "respuesta de esta cosa" + localhostReg
 }
 
-func enviarProximo(importaciones string) {
+func enviarProximo(csv string) {
 	indice := rand.Intn(len(bitacoraAddr2))
 	con, _ := net.Dial("tcp", bitacoraAddr2[indice])
-	fmt.Printf("Enviando hacia %s", bitacoraAddr2[indice], importaciones)
+	fmt.Printf("Enviando hacia %s", bitacoraAddr2[indice], csv)
 	defer con.Close()
-	fmt.Fprintln(con, importaciones)
+	fmt.Fprintln(con, csv)
 	fmt.Fprintln(con, resp)
 
 }

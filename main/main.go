@@ -20,12 +20,12 @@ type Importacion struct {
 
 var importaciones []Importacion
 
-func handleRequests() {
+func handleRequests(csv [][]string) {
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("/upload", cargarImportaciones)
 	mux.HandleFunc("/importaciones", mostrarImportaciones)
-	mux.HandleFunc("/sintoma", cargarSintomas)
+	mux.HandleFunc("/sintoma", sintomas(csv))
 
 	log.Fatal(http.ListenAndServe("localhost:8000", mux))
 }
@@ -36,29 +36,37 @@ func mostrarImportaciones(resp http.ResponseWriter, req *http.Request) {
 	io.WriteString(resp, string(jsonBytes))
 }
 
-func cargarSintomas(resp http.ResponseWriter, req *http.Request) {
-	resp.Header().Set("Access-Control-Allow-Origin", "http://localhost:4200")
-	resp.Header().Set("Access-Control-Allow-Credentials", "true")
-	resp.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
-	resp.Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
+func sintomas(csv [][]string) http.HandlerFunc {
+	return func(resp http.ResponseWriter, req *http.Request) {
+		resp.Header().Set("Access-Control-Allow-Origin", "http://localhost:4200")
+		resp.Header().Set("Access-Control-Allow-Credentials", "true")
+		resp.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+		resp.Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
 
-	var listaSintoma []string
-	body, err := ioutil.ReadAll(req.Body)
+		var listaSintoma []string
+		body, err := ioutil.ReadAll(req.Body)
 
-	if err != nil {
-		http.Error(resp, "Error", http.StatusBadRequest)
+		if err != nil {
+			http.Error(resp, "Error", http.StatusBadRequest)
+		}
+
+		json.Unmarshal([]byte(body), &listaSintoma)
+		fmt.Print(listaSintoma)
+
+		conexionCluster(csv)
+		resp.Header().Set("Content-Type", "application/json")
+
+		jsonBytes, _ := json.MarshalIndent(csv, "", " ")
+		io.WriteString(resp, string(jsonBytes))
 	}
-
-	json.Unmarshal([]byte(body), &listaSintoma)
-	fmt.Print(listaSintoma)
 }
 
-func conexionCluster(importaciones []Importacion) {
+func conexionCluster(csv [][]string) {
 	remotehost := "localhost:9003"
 	con, err := net.Dial("tcp", remotehost)
 	fmt.Print(err, " ERRORORO")
 	defer con.Close()
-	fmt.Fprintln(con, importaciones)
+	fmt.Fprintln(con, csv)
 	fmt.Fprintln(con, "")
 }
 
@@ -100,11 +108,11 @@ func cargarImportaciones(resp http.ResponseWriter, req *http.Request) {
 		}
 
 		//fmt.Print(importaciones)
-		conexionCluster(importaciones)
+		/*conexionCluster(importaciones)
 		resp.Header().Set("Content-Type", "application/json")
 
 		jsonBytes, _ := json.MarshalIndent(importaciones, "", " ")
-		io.WriteString(resp, string(jsonBytes))
+		io.WriteString(resp, string(jsonBytes))*/
 
 	} else {
 		http.Error(resp, "Método inválido", http.StatusMethodNotAllowed)
@@ -112,6 +120,55 @@ func cargarImportaciones(resp http.ResponseWriter, req *http.Request) {
 
 }
 
+func getDataTraining() {
+	url := "https://raw.githubusercontent.com/juanCR44/backendTFC/main/COVID_DF.csv"
+	resp, _ := http.Get(url)
+	defer resp.Body.Close()
+
+	var pacientes [][]string
+	csvReader := csv.NewReader(resp.Body)
+	for {
+		paciente, err := csvReader.Read()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		//Eliminando 0's de las listas de sintomas
+		aux := 0
+		for _, n := range paciente {
+			if n != "0" {
+				paciente[aux] = n
+				aux++
+			}
+		}
+
+		//Generación de lista de filas
+		paciente = paciente[:aux]
+		pacientes = append(pacientes, paciente)
+	}
+	/*
+
+		//Creación del clasificador bayesiano
+		classifier := bayesian.NewClassifier(sospechoso, no_sospechoso)
+
+		//Entrenamiento con la data del csv
+		for i := 0; i < len(pacientes); i++ {
+			if pacientes[i][0] == "Flag_sospechoso" {
+				sospechosoSintomas := pacientes[i][1:]
+				classifier.Learn(sospechosoSintomas, sospechoso)
+			} else {
+				no_sospechosoSintomas := pacientes[i]
+				classifier.Learn(no_sospechosoSintomas, no_sospechoso)
+			}
+		}
+
+		fmt.Print("Finalizado entrenamiento")*/
+	handleRequests(pacientes)
+}
+
 func main() {
-	handleRequests()
+	getDataTraining()
 }
