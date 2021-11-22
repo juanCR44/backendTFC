@@ -43,17 +43,16 @@ func sintomas(csv [][]string) http.HandlerFunc {
 		resp.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
 		resp.Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
 
-		var listaSintoma []string
 		body, err := ioutil.ReadAll(req.Body)
+
+		var sintomas []string
+		json.Unmarshal([]byte(body), &sintomas)
 
 		if err != nil {
 			http.Error(resp, "Error", http.StatusBadRequest)
 		}
 
-		json.Unmarshal([]byte(body), &listaSintoma)
-		fmt.Print(listaSintoma)
-
-		conexionCluster(csv)
+		conexionCluster(csv, sintomas)
 		resp.Header().Set("Content-Type", "application/json")
 
 		jsonBytes, _ := json.MarshalIndent(csv, "", " ")
@@ -61,13 +60,13 @@ func sintomas(csv [][]string) http.HandlerFunc {
 	}
 }
 
-func conexionCluster(csv [][]string) {
+func conexionCluster(csv [][]string, sintomas []string) {
 	remotehost := "localhost:9003"
 	con, err := net.Dial("tcp", remotehost)
 	fmt.Print(err, " ERRORORO")
 	defer con.Close()
 	fmt.Fprintln(con, csv)
-	fmt.Fprintln(con, "")
+	fmt.Fprintln(con, sintomas)
 }
 
 func cargarImportaciones(resp http.ResponseWriter, req *http.Request) {
@@ -112,7 +111,19 @@ func cargarImportaciones(resp http.ResponseWriter, req *http.Request) {
 		resp.Header().Set("Content-Type", "application/json")
 
 		jsonBytes, _ := json.MarshalIndent(importaciones, "", " ")
-		io.WriteString(resp, string(jsonBytes))*/
+		io.WriteString(resp, string(jsonBytes))
+
+		_ = likely
+		_ = scores
+
+		//Print del resultado
+		if probs[0] > probs[1] {
+			fmt.Print("Sospechoso")
+		} else {
+			fmt.Print("No sospechoso")
+		}
+		fmt.Print(probs)
+		*/
 
 	} else {
 		http.Error(resp, "Método inválido", http.StatusMethodNotAllowed)

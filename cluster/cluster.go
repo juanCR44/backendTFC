@@ -172,13 +172,19 @@ func servicioHP() {
 func manejadorHP(con net.Conn) {
 	defer con.Close()
 	bufferIn := bufio.NewReader(con)
-	csv, _ := bufferIn.ReadString('\n')
 
+	csv, _ := bufferIn.ReadString('\n')
 	var line [][]string
 	json.Unmarshal([]byte(csv), line)
+	//fmt.Print(line, " 1")
+	//csv = strings.TrimSpace(csv)
 
-	csv = strings.TrimSpace(csv)
 	resp_nodo, _ := bufferIn.ReadString('\n')
+	var sintomas []string
+	json.Unmarshal([]byte(resp_nodo), sintomas)
+
+	//fmt.Print(sintomas, " 2")
+
 	resp_nodo = strings.TrimSpace(resp_nodo)
 
 	if resp_nodo != "" {
