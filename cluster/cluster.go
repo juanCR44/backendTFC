@@ -222,13 +222,11 @@ func algoritmo(csv [][]string, sintomas []string) string {
 
 	//Aquí se pasan la lista de sintomas que ingresa el usuario
 	scores, likely, _ := classifier.LogScores(
-		[]string{"fiebre", "dificultad_respiratoria", "anosmia_hiposmia",
-			"dolor_pecho"},
+		sintomas,
 	)
 
 	probs, likely, _ := classifier.ProbScores(
-		[]string{"fiebre", "dificultad_respiratoria", "anosmia_hiposmia",
-			"dolor_pecho"},
+		sintomas,
 	)
 
 	_ = likely
