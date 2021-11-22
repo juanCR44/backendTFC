@@ -66,7 +66,7 @@ func conexionCluster(csv [][]string, sintomas []string) {
 	fmt.Print(err, " ERRORORO")
 	defer con.Close()
 	fmt.Fprintln(con, csv)
-	//fmt.Fprintln(con, sintomas)
+	fmt.Fprintln(con, sintomas)
 	fmt.Fprintln(con, "")
 }
 
