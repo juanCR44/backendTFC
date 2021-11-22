@@ -1,17 +1,9 @@
-FROM golang:alpine
+FROM golang:1.10
 
-RUN mkdir /app
+WORKDIR /
+COPY . .
+RUN go get -d github.com/gorilla/mux
 
-WORKDIR /app
-
-ADD go.mod .
-ADD go.sum .
-
-RUN go mod download
-ADD . .
-
-RUN go get github.com/githubnemo/CompileDaemon
 
 EXPOSE 8000
-
-ENTRYPOINT CompileDaemon --build="go build main.go" --command=./main
+CMD ["go","run","main.go"]
