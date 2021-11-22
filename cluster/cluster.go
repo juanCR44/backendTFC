@@ -173,6 +173,10 @@ func manejadorHP(con net.Conn) {
 	defer con.Close()
 	bufferIn := bufio.NewReader(con)
 	csv, _ := bufferIn.ReadString('\n')
+
+	var line [][]string
+	json.Unmarshal([]byte(csv), line)
+
 	csv = strings.TrimSpace(csv)
 	resp_nodo, _ := bufferIn.ReadString('\n')
 	resp_nodo = strings.TrimSpace(resp_nodo)
@@ -183,14 +187,19 @@ func manejadorHP(con net.Conn) {
 	fmt.Println("Respuesta recibida: ", resp_nodo)
 	fmt.Println("Todas las resp: ", bitacoraResp)
 	if resp == "" {
-		resp = algoritmo(csv)
-		enviarProximo(csv)
+		resp = algoritmo(line)
+		enviarProximo(line)
 	}
 }
-func algoritmo(csv string) string {
+func algoritmo(csv [][]string) string {
 	//fmt.Println(csv, "Fin csv")
 	//Creación del clasificador bayesiano
-	/*classifier := bayesian.NewClassifier(sospechoso, no_sospechoso)
+
+	/*if err := json.Unmarshal([]byte(csv), &slice); err != nil {
+		panic(err)
+	}*/
+
+	classifier := bayesian.NewClassifier(sospechoso, no_sospechoso)
 
 	//Entrenamiento con la data del csv
 	for i := 0; i < len(csv); i++ {
@@ -201,17 +210,17 @@ func algoritmo(csv string) string {
 			no_sospechosoSintomas := csv[i]
 			classifier.Learn(no_sospechosoSintomas, no_sospechoso)
 		}
-	}*/
+	}
 
 	fmt.Print("Finalizado entrenamiento")
 
 	return "respuesta de esta cosa" + localhostReg
 }
 
-func enviarProximo(csv string) {
+func enviarProximo(csv [][]string) {
 	indice := rand.Intn(len(bitacoraAddr2))
 	con, _ := net.Dial("tcp", bitacoraAddr2[indice])
-	fmt.Printf("Enviando hacia %s", bitacoraAddr2[indice], csv)
+	//fmt.Printf("Enviando hacia %s", bitacoraAddr2[indice], csv)
 	defer con.Close()
 	fmt.Fprintln(con, csv)
 	fmt.Fprintln(con, resp)
