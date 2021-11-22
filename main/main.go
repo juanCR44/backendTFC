@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"log"
 	"net"
 	"net/http"
@@ -26,13 +27,30 @@ func handleRequests() {
 	mux.HandleFunc("/upload", cargarImportaciones)
 	mux.HandleFunc("/importaciones", mostrarImportaciones)
 
-	log.Fatal(http.ListenAndServe(":8000", mux))
+	log.Fatal(http.ListenAndServe("localhost:8000", mux))
 }
 
 func mostrarImportaciones(resp http.ResponseWriter, req *http.Request) {
 	resp.Header().Set("Content-Type", "application/json")
 	jsonBytes, _ := json.MarshalIndent(importaciones, "", " ")
 	io.WriteString(resp, string(jsonBytes))
+}
+
+func cargarSintomas(resp http.ResponseWriter, req *http.Request) {
+	resp.Header().Set("Access-Control-Allow-Origin", "http://localhost:4200")
+	resp.Header().Set("Access-Control-Allow-Credentials", "true")
+	resp.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+	resp.Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
+
+	var listaSintoma []string
+	body, err := ioutil.ReadAll(req.Body)
+
+	if err != nil {
+		http.Error(resp, "Error", http.StatusBadRequest)
+	}
+
+	json.Unmarshal([]byte(body), &listaSintoma)
+	fmt.Print(listaSintoma)
 }
 
 func conexionCluster(importaciones []Importacion) {
