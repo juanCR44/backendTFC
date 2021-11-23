@@ -174,8 +174,8 @@ func manejadorHP(con net.Conn) {
 	bufferIn := bufio.NewReader(con)
 
 	//var line [][]string
-	csv, _ := bufferIn.ReadSlice('\n')
-	//fmt.Print(csv, " 1")
+	csv, _ := bufferIn.ReadString('\n')
+	fmt.Print(csv, " 1")
 
 	var line [][]string
 	json.Unmarshal([]byte(csv), &line)
@@ -188,18 +188,20 @@ func manejadorHP(con net.Conn) {
 	json.Unmarshal([]byte(sintomas), sintomas)*/
 
 	//fmt.Print(sintomas, " 2")
-	resp_nodo, _ := bufferIn.ReadString('\n')
+	/*resp_nodo, _ := bufferIn.ReadString('\n')
 	resp_nodo = strings.TrimSpace(resp_nodo)
 
 	if resp_nodo != "" {
 		bitacoraResp = append(bitacoraResp, resp_nodo)
 	}
+
+	fmt.Print(resp_nodo)
 	//fmt.Println("Respuesta recibida: ", resp_nodo)
 	//fmt.Println("Todas las resp: ", bitacoraResp)
 	if resp == "" {
 		resp = algoritmo(line)
 		enviarProximo(line)
-	}
+	}*/
 }
 func algoritmo(csv [][]string) string {
 	//fmt.Println(csv, "Fin csv")
@@ -211,7 +213,7 @@ func algoritmo(csv [][]string) string {
 
 	classifier := bayesian.NewClassifier(sospechoso, no_sospechoso)
 
-	//fmt.Println(csv, " aver si hay CSV")
+	fmt.Println(csv, " aver si hay CSV")
 
 	//Entrenamiento con la data del csv
 	for i := 0; i < len(csv); i++ {
