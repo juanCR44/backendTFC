@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"encoding/csv"
 	"fmt"
 	"io"
@@ -8,7 +9,11 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"strings"
 )
+
+var respuesta_cluster []string
+var respuesta_api string
 
 func handleRequests(csv [][]string) {
 	mux := http.NewServeMux()
@@ -16,6 +21,31 @@ func handleRequests(csv [][]string) {
 	mux.HandleFunc("/sintoma", sintomas(csv))
 
 	log.Fatal(http.ListenAndServe("localhost:8000", mux))
+}
+func convertir_string_to_array(text string) []string {
+	text = text[1 : len(text)-1]
+	respuesta_cluster = strings.Fields(text)
+	return respuesta_cluster
+}
+func retornar_resultado() {
+	var sos = 0
+	var no_sos = 0
+
+	for i, s := range respuesta_cluster {
+		s = strings.TrimSpace(s)
+		fmt.Println(i, s)
+		if s == "Sospechoso" {
+			sos += 1
+		} else {
+			no_sos += 1
+		}
+	}
+
+	if sos > no_sos {
+		respuesta_api = "Sospechoso"
+	} else {
+		respuesta_api = "No Sospechoso"
+	}
 }
 
 func sintomas(csv [][]string) http.HandlerFunc {
@@ -33,13 +63,12 @@ func sintomas(csv [][]string) http.HandlerFunc {
 			if err != nil {
 				http.Error(resp, "Error", http.StatusBadRequest)
 			}
+
 			conexionCluster(csv, sintomas)
-			// luego de esta conexion debe eliminarse los [] para que quede: sospechoso, sospechoso, sospechoso,
-			// luego se cuentan cual tiene mas o sospechoso o no sospechoso y se manda sospechoso o no sospechoso
-			// abc = resp (sos o no sos)
-			var abc = "Hola"
+			retornar_resultado()
+			fmt.Println(respuesta_api, "esto envia")
 			resp.Header().Set("Content-Type", "application/json")
-			io.WriteString(resp, `{"response":"`+abc+`"}`)
+			io.WriteString(resp, `{"response":"`+respuesta_api+`"}`)
 		}
 
 	}
@@ -52,6 +81,26 @@ func conexionCluster(csv [][]string, sintomas string) {
 	fmt.Fprintln(con, csv)
 	fmt.Fprintln(con, sintomas)
 	fmt.Fprintln(con, "")
+
+	// recibir respuesta
+	ln, err := net.Listen("tcp", "localhost:9011")
+	if err != nil {
+		fmt.Printf("Error en la resolución de la dirección de red!! ", err.Error())
+	}
+	defer ln.Close()
+	con2, err := ln.Accept()
+	if err != nil {
+		fmt.Printf("Error en la conexion!!!: ", err.Error())
+	}
+	defer con2.Close()
+	bufferIn := bufio.NewReader(con2)
+	msg, _ := bufferIn.ReadString('\n')
+	msg = strings.TrimSpace(msg)
+	println("Respuesta del cluster: ", msg)
+	if msg != "" {
+
+		convertir_string_to_array(msg)
+	}
 }
 
 func getDataTraining() {

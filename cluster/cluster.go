@@ -161,8 +161,6 @@ func manejadorRecibeNotificar(con net.Conn) {
 	fmt.Println(bitacoraAddr2)
 }
 
-////////////////////////////
-
 func servicioHP() {
 	ln, _ := net.Listen("tcp", localhostHp)
 	defer ln.Close()
@@ -171,17 +169,6 @@ func servicioHP() {
 		go manejadorHP(con)
 	}
 }
-
-// func convertir_arra_string(csv string){
-// 	tam := len(csv)
-// 	csv = csv[1 : tam-1]
-
-// 	arre_uni := strings.Split(csv, "]")
-
-// 	for i,s := range arre_uni {
-
-// 	}
-// }
 
 func convertir_string_to_array2(test string) [][]string {
 	var listaT [][]string
@@ -225,8 +212,6 @@ func manejadorHP(con net.Conn) {
 	resp_nodo = strings.TrimSpace(resp_nodo)
 
 	if resp_nodo != "" {
-		// conversion
-		fmt.Println("aca vuela")
 		resp_nodo = resp_nodo[1 : len(resp_nodo)-1]
 		respuesta_bitacora = strings.Fields(resp_nodo)
 		for _, s := range respuesta_bitacora {
@@ -234,15 +219,12 @@ func manejadorHP(con net.Conn) {
 		}
 	}
 
-	//fmt.Println("Todas las resp: ", bitacoraResp)
-
 	if resp == "" {
 		algoritmo(sint)
 		if len(bitacoraResp) < 3 {
 			enviarProximo()
 		} else {
-			//fmt.Println("Todos los resultados:", bitacoraResp)
-			// conecto con el api
+			fmt.Println("Todos los resultados:", bitacoraResp)
 			enviarApi()
 		}
 	}
@@ -278,7 +260,7 @@ func algoritmo(sintomas []string) {
 		resp = "Sospechoso"
 	} else {
 		fmt.Print("No sospechoso")
-		resp = "No Sospechoso"
+		resp = "NoSospechoso"
 	}
 	fmt.Print(probs)
 	bitacoraResp = append(bitacoraResp, resp)
@@ -296,7 +278,8 @@ func enviarProximo() {
 }
 
 func enviarApi() {
-	//bitacoraResp
-	// esto deberia devolver al main.go bitacora Resp que es basicamente esto: [Sospechoso Sospechoso Sospechoso]
-	// una vez que lo pase se cambia por "abc" que se esta enviando ahora en el main al front
+	fmt.Println("envia", bitacoraResp)
+	con, _ := net.Dial("tcp", "localhost:9011")
+	defer con.Close()
+	fmt.Fprintln(con, bitacoraResp)
 }
