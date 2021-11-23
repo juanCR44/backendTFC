@@ -37,7 +37,6 @@ func sintomas(csv [][]string) http.HandlerFunc {
 			// luego de esta conexion debe eliminarse los [] para que quede: sospechoso, sospechoso, sospechoso,
 			// luego se cuentan cual tiene mas o sospechoso o no sospechoso y se manda sospechoso o no sospechoso
 			// abc = resp (sos o no sos)
-			// Despues de darle al boton en el front, en la parte de consola se debe mostrar abc (ya se muestra pero dice hola)1
 			var abc = "Hola"
 			resp.Header().Set("Content-Type", "application/json")
 			io.WriteString(resp, `{"response":"`+abc+`"}`)
