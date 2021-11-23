@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/csv"
-	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -11,29 +10,12 @@ import (
 	"net/http"
 )
 
-type Importacion struct {
-	Anio     string `json:"anio"`
-	Mes      string `json:"mes"`
-	Producto string `json:"producto"`
-	Peso     string `json:"peso"`
-}
-
-var importaciones []Importacion
-
 func handleRequests(csv [][]string) {
 	mux := http.NewServeMux()
 
-	mux.HandleFunc("/upload", cargarImportaciones)
-	mux.HandleFunc("/importaciones", mostrarImportaciones)
 	mux.HandleFunc("/sintoma", sintomas(csv))
 
 	log.Fatal(http.ListenAndServe("localhost:8000", mux))
-}
-
-func mostrarImportaciones(resp http.ResponseWriter, req *http.Request) {
-	resp.Header().Set("Content-Type", "application/json")
-	jsonBytes, _ := json.MarshalIndent(importaciones, "", " ")
-	io.WriteString(resp, string(jsonBytes))
 }
 
 func sintomas(csv [][]string) http.HandlerFunc {
@@ -43,93 +25,34 @@ func sintomas(csv [][]string) http.HandlerFunc {
 		resp.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
 		resp.Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
 
-		body, err := ioutil.ReadAll(req.Body)
+		if req.Method == "POST" {
+			body, err := ioutil.ReadAll(req.Body)
 
-		var sintomas []string
-		json.Unmarshal([]byte(body), &sintomas)
+			sintomas := string(body)
 
-		if err != nil {
-			http.Error(resp, "Error", http.StatusBadRequest)
+			if err != nil {
+				http.Error(resp, "Error", http.StatusBadRequest)
+			}
+			conexionCluster(csv, sintomas)
+			// luego de esta conexion debe eliminarse los [] para que quede: sospechoso, sospechoso, sospechoso,
+			// luego se cuentan cual tiene mas o sospechoso o no sospechoso y se manda sospechoso o no sospechoso
+			// abc = resp (sos o no sos)
+			// Despues de darle al boton en el front, en la parte de consola se debe mostrar abc (ya se muestra pero dice hola)1
+			var abc = "Hola"
+			resp.Header().Set("Content-Type", "application/json")
+			io.WriteString(resp, `{"response":"`+abc+`"}`)
 		}
 
-		conexionCluster(csv, sintomas)
-		resp.Header().Set("Content-Type", "application/json")
-
-		jsonBytes, _ := json.MarshalIndent(csv, "", " ")
-		io.WriteString(resp, string(jsonBytes))
 	}
 }
 
-func conexionCluster(csv [][]string, sintomas []string) {
+func conexionCluster(csv [][]string, sintomas string) {
 	remotehost := "localhost:9003"
-	con, err := net.Dial("tcp", remotehost)
-	fmt.Print(err, " ERRORORO")
+	con, _ := net.Dial("tcp", remotehost)
 	defer con.Close()
 	fmt.Fprintln(con, csv)
 	fmt.Fprintln(con, sintomas)
 	fmt.Fprintln(con, "")
-}
-
-func cargarImportaciones(resp http.ResponseWriter, req *http.Request) {
-	resp.Header().Set("Access-Control-Allow-Origin", "http://localhost:4200")
-	resp.Header().Set("Access-Control-Allow-Credentials", "true")
-	resp.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
-	resp.Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
-
-	if req.Method == "POST" {
-		fs, _, err := req.FormFile("file")
-		if err != nil {
-			http.Error(resp, "Error", http.StatusBadRequest)
-		}
-
-		fmt.Printf("Correcto")
-		if err != nil {
-			fmt.Printf("get form err: %s", err)
-		}
-		defer fs.Close()
-		r := csv.NewReader(fs)
-
-		for {
-			row, err := r.Read()
-			if err != nil && err != io.EOF {
-				fmt.Printf("can not read, err is %+v", err)
-			}
-			if err == io.EOF {
-				break
-			}
-			importacion := Importacion{
-				Anio:     row[0],
-				Mes:      row[1],
-				Producto: row[2],
-				Peso:     row[3],
-			}
-
-			importaciones = append(importaciones, importacion)
-		}
-
-		//fmt.Print(importaciones)
-		/*conexionCluster(importaciones)
-		resp.Header().Set("Content-Type", "application/json")
-
-		jsonBytes, _ := json.MarshalIndent(importaciones, "", " ")
-		io.WriteString(resp, string(jsonBytes))
-
-		_ = likely
-		_ = scores
-
-		//Print del resultado
-		if probs[0] > probs[1] {
-			fmt.Print("Sospechoso")
-		} else {
-			fmt.Print("No sospechoso")
-		}
-		fmt.Print(probs)
-		*/
-
-	} else {
-		http.Error(resp, "Método inválido", http.StatusMethodNotAllowed)
-	}
-
 }
 
 func getDataTraining() {
@@ -161,23 +84,6 @@ func getDataTraining() {
 		paciente = paciente[:aux]
 		pacientes = append(pacientes, paciente)
 	}
-	/*
-
-		//Creación del clasificador bayesiano
-		classifier := bayesian.NewClassifier(sospechoso, no_sospechoso)
-
-		//Entrenamiento con la data del csv
-		for i := 0; i < len(pacientes); i++ {
-			if pacientes[i][0] == "Flag_sospechoso" {
-				sospechosoSintomas := pacientes[i][1:]
-				classifier.Learn(sospechosoSintomas, sospechoso)
-			} else {
-				no_sospechosoSintomas := pacientes[i]
-				classifier.Learn(no_sospechosoSintomas, no_sospechoso)
-			}
-		}
-
-		fmt.Print("Finalizado entrenamiento")*/
 	handleRequests(pacientes)
 }
 

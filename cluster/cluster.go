@@ -20,6 +20,9 @@ var bitacoraAddr []string
 var bitacoraAddr2 []string
 var resp string = ""
 var bitacoraResp []string
+var csv [][]string
+var sint []string
+var respuesta_bitacora []string
 
 const (
 	sospechoso    bayesian.Class = "sospechoso"
@@ -169,51 +172,85 @@ func servicioHP() {
 	}
 }
 
+// func convertir_arra_string(csv string){
+// 	tam := len(csv)
+// 	csv = csv[1 : tam-1]
+
+// 	arre_uni := strings.Split(csv, "]")
+
+// 	for i,s := range arre_uni {
+
+// 	}
+// }
+
+func convertir_string_to_array2(test string) [][]string {
+	var listaT [][]string
+	test = test[1 : len(test)-1]
+	var s string
+	for i := 0; i < len(test); i++ {
+		if test[i] == ' ' && test[i-1] == ']' {
+			s = s[1 : len(s)-1]
+			xd := strings.Fields(s)
+			listaT = append(listaT, xd)
+			s = ""
+		} else {
+			s = s + string(test[i])
+		}
+	}
+	return listaT
+}
+
+func convertir_string_to_array1(test string) []string {
+	test = test[1 : len(test)-1]
+	x := strings.Split(test, ",")
+	for i := 0; i < len(x); i++ {
+		x[i] = x[i][1 : len(x[i])-1]
+	}
+	return x
+}
+
 func manejadorHP(con net.Conn) {
 	defer con.Close()
 	bufferIn := bufio.NewReader(con)
 
-	//var line [][]string
-	csv, _ := bufferIn.ReadSlice('\n')
-	//fmt.Print(csv, " 1")
+	csv1, _ := bufferIn.ReadString('\n')
+	csv1 = strings.TrimSpace(csv1)
+	csv = convertir_string_to_array2(csv1)
 
-	var line [][]string
-	json.Unmarshal([]byte(csv), &line)
-	//fmt.Print(line, " 2")
+	sintomas, _ := bufferIn.ReadString('\n')
+	sintomas = strings.TrimSpace(sintomas)
+	sint = convertir_string_to_array1(sintomas)
 
-	//csv = strings.TrimSpace(csv)
-
-	/*sintomas, _ := bufferIn.ReadString('\n')
-	var listaSintomas []string
-	json.Unmarshal([]byte(sintomas), sintomas)*/
-
-	//fmt.Print(sintomas, " 2")
 	resp_nodo, _ := bufferIn.ReadString('\n')
 	resp_nodo = strings.TrimSpace(resp_nodo)
 
 	if resp_nodo != "" {
-		bitacoraResp = append(bitacoraResp, resp_nodo)
+		// conversion
+		fmt.Println("aca vuela")
+		resp_nodo = resp_nodo[1 : len(resp_nodo)-1]
+		respuesta_bitacora = strings.Fields(resp_nodo)
+		for _, s := range respuesta_bitacora {
+			bitacoraResp = append(bitacoraResp, s)
+		}
 	}
-	//fmt.Println("Respuesta recibida: ", resp_nodo)
+
 	//fmt.Println("Todas las resp: ", bitacoraResp)
+
 	if resp == "" {
-		resp = algoritmo(line)
-		enviarProximo(line)
+		algoritmo(sint)
+		if len(bitacoraResp) < 3 {
+			enviarProximo()
+		} else {
+			//fmt.Println("Todos los resultados:", bitacoraResp)
+			// conecto con el api
+			enviarApi()
+		}
 	}
 }
-func algoritmo(csv [][]string) string {
-	//fmt.Println(csv, "Fin csv")
-	//Creación del clasificador bayesiano
 
-	/*if err := json.Unmarshal([]byte(csv), &slice); err != nil {
-		panic(err)
-	}*/
-
+func algoritmo(sintomas []string) {
 	classifier := bayesian.NewClassifier(sospechoso, no_sospechoso)
 
-	//fmt.Println(csv, " aver si hay CSV")
-
-	//Entrenamiento con la data del csv
 	for i := 0; i < len(csv); i++ {
 		if csv[i][0] == "Flag_sospechoso" {
 			sospechosoSintomas := csv[i][1:]
@@ -224,14 +261,10 @@ func algoritmo(csv [][]string) string {
 		}
 	}
 
-	fmt.Print("Finalizado entrenamiento")
-
 	//Aquí se pasan la lista de sintomas que ingresa el usuario
-	/*fmt.Println(sintomas, " a ver si hay ")
 	scores, likely, _ := classifier.LogScores(
 		sintomas,
 	)
-
 	probs, likely, _ := classifier.ProbScores(
 		sintomas,
 	)
@@ -247,16 +280,23 @@ func algoritmo(csv [][]string) string {
 		fmt.Print("No sospechoso")
 		resp = "No Sospechoso"
 	}
-	fmt.Print(probs)*/
-
-	return "respuesta de esta cosa" + localhostReg
+	fmt.Print(probs)
+	bitacoraResp = append(bitacoraResp, resp)
 }
 
-func enviarProximo(csv [][]string) {
-	indice := rand.Intn(len(bitacoraAddr2))
-	con, _ := net.Dial("tcp", bitacoraAddr2[indice])
-	fmt.Printf("Enviando hacia %s", bitacoraAddr2[indice], len(csv))
-	defer con.Close()
-	fmt.Fprintln(con, csv)
-	fmt.Fprintln(con, resp)
+func enviarProximo() {
+	if len(bitacoraAddr2) > 1 {
+		indice := rand.Intn(len(bitacoraAddr2))
+		con, _ := net.Dial("tcp", bitacoraAddr2[indice])
+		defer con.Close()
+		fmt.Fprintln(con, csv)
+		fmt.Fprintln(con, sint)
+		fmt.Fprintln(con, bitacoraResp)
+	}
+}
+
+func enviarApi() {
+	//bitacoraResp
+	// esto deberia devolver al main.go bitacora Resp que es basicamente esto: [Sospechoso Sospechoso Sospechoso]
+	// una vez que lo pase se cambia por "abc" que se esta enviando ahora en el main al front
 }
